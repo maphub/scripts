@@ -205,7 +205,7 @@ while j <= metlength
 			puts "Subject tags from LCSH not found in record..."
 		end
 		sampleyaml = {"map" => k, "id" => mapid, "title" => titleelement, "author" => nameelement, "subject" => subjectelement, "date" => dateelement}
-		File.open('yamlseeddata.yaml',"a") {|f| f.write(sampleyaml.to_yaml)} #Success ! YAML file built
+		File.open('loc-seeddata.yaml',"a") {|f| f.write(sampleyaml.to_yaml)} #Success ! YAML file built
 		puts "Writing sample no: " + k.to_s() + " and its selected metadata to the output YAML file ..."
 		i+= 1
 	end
