@@ -1,4 +1,6 @@
-#Production script for maphub. Script description as follows:
+# TODO: keep the intro short (e.g., https://github.com/maphub/maphub-seeddata/blob/master/scripts/imagedownload.rb)
+
+# Production script for maphub. Script description as follows:
 # We need a script that generates a seed data file for the Library of Congress Maphub instance.
 # Each "map record" in the seed data file includes:
 # - pointers to the map image file URIs
@@ -95,19 +97,21 @@ options = OptionParser.parse(ARGV)
 mapsimgdir = options.mapimgdir
 metadatadir = options.metadata
 numsamples = options.num.to_i
-numsamples1 = numsamples - 1
+numsamples1 = numsamples - 1 #TODO: do you really need two vars here?
 
 # 1. Iterate over all files in the given directory. Grab file names -.*.mm2
 # and store them in some data structure. Grabs only numsamples number of filenames
 
 #getting basedirectory
-mapdir = Dir.pwd + "/" + mapsimgdir
+mapdir = Dir.pwd + "/" + mapsimgdir # TODO: don't assume that the maps dir is always a subdir of the current dir
+
+# TODO: why not simply list all files in the dir and add them to an array?
 
 #getting contents of the mapdir, removing extension, printing eachfilename
 mapfilenames = Dir.glob(File.join(mapdir, '*.jp2'))
 basefile = Array.new()
 maplength = mapfilenames.length
-counter = 0	
+counter = 0	# TODO: you don't need a counter; you have the array
 
 puts "Finding all the map files..."
 #doing some fancy manipulations to get an array of id names.
@@ -126,6 +130,10 @@ end
 # return
 
 puts "Finding all the metadata files ..."
+
+# TODO: what about writing a function that stores all filenames in array?
+# Avoid duplicated code
+
 # 2. Iterate within each file in a given directory and match previous filenames
 # stored in data structure with individual metadata record.
 metadir = Dir.pwd + "/" + metadatadir
@@ -159,6 +167,15 @@ j = 0
 metlength = metarray.length - 1
 puts "Creating output YAML File"
 #Firstly, looping over numsamples - 1 :: i.e. for every sample requested.
+
+# TODO: avoid excessive IO -> in the worst case you are opening and closing the
+# output file (no_metadata_records * no_maps) times
+
+# TODO: simply open the output file and the then within the block, iterate over
+# all metadata xml files; in each metadata xml file, iterate over all records;
+# if a record identifes an item that is in the list of known map file names,
+# extract the defined record fields and write them to the output file.
+
 while j <= metlength
 	while i <= numsamples1
 		k = i + 1
