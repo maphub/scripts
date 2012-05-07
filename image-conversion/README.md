@@ -1,8 +1,49 @@
-# Converter script notes
-1. Use cases: inputs, outputs?
+# MapHub tileset image conversion script
+This script converts a raw map image into a Google tileset if certain criteria are met.
 
-Current design:
-	inputs: metadata server URL and local image directory root
-	Scans root/raw for images, compares to root/tilesets. If no google tileset, processes image.
-	Checks metadata for updated_at, if newer than tileset image date, re-processes image (into tmpdir then mv).
+# Criteria
+The script will attempt to convert a raw map image into a tileset if both of the following criteria are satisfied:
+1. There exists no previous conversion timestamp or the current timestamp is older than the modification time of the map.
+2. There exist more than two control points for the map.
+
+# Design
+Currently, the script can be run in one of two ways: it can be run from the command-line, using typical command-line switches, or it can be run from within another application using a hash of parameters. The current list of possible parameters are as follows:
+
+<table>
+	<tr>
+		<td>CLI</td>
+		<td>Hash</td>
+		<td>Description</td>
+	</tr>
+	<tr>
+		<td>-?</td>
+		<td></td>
+		<td>Display CLI usage information.</td>
+	</tr>
+	<tr>
+		<td>-h</td>
+		<td></td>
+		<td>Display CLI usage information.</td>
+	</tr>
+	<tr>
+		<td>-d</td>
+		<td>imageDirectory</td>
+		<td>The path to a directory containing a 'raw' subdirectory for raw map images and a 'ts_google' subdirectory for Google tile sets for those map images.</td>
+	</tr>
+	<tr>
+		<td>-m</td>
+		<td>mapID</td>
+		<td>(Optional) A map ID to process (if possible). If not specified, all maps will be processed (if possible).</td>
+	</tr>
+	<tr>
+		<td>-s</td>
+		<td>metadataServerURL</td>
+		<td>The root URL for the MapHub server that contains metadata for the maps that are to be processed.</td>
+	</tr>
+	<tr>
+		<td>-w</td>
+		<td>sleepDelay</td>
+		<td>(Optional) A delay, in seconds, to wait before attempting to re-process the specified maps. If not specified, only one run will be processed and then the script will exit.</td>
+	</tr>
+</table>
 
