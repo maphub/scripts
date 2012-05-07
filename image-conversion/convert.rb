@@ -67,10 +67,11 @@ end
 #
 # The image generation process creates a number of files, including the tile
 # set, first in a temporary directory. After creating the tile set, the current
-# tile set (if any) is removed and the new tile set if moved into its place. If
-# a map ID was not specified, the process will sleep and restart the process. If
-# a map ID was specified, the process will exit after moving the new tile set to
-# the destination.
+# tile set (if any) is removed and the new tile set is moved into its place.
+#
+# If a sleep delay is specified, the process will wait that number of seconds
+# and re-process the specified parameters (all the maps or the single map). If
+# no delay is specified, processing will halt after the first attempt.
 #
 class TilesetConverter
 	#
@@ -90,7 +91,7 @@ class TilesetConverter
 			@checkpoints = []
 		end
 		
-		puts 'Checkpoints: '+@checkpoints.to_s
+#		puts 'Old checkpoints: '+@checkpoints.to_s
 	end
 	
 	#
@@ -118,7 +119,8 @@ class TilesetConverter
 				# We are being used via the CLI, show the error and usage output.
 				#
 				returnCode = usage(e.message())
-				exit returnCode
+#				exit returnCode
+raise
 			else
 				#
 				# We are being used in another application, throw the current
@@ -127,27 +129,26 @@ class TilesetConverter
 				raise
 			end
 		end
-		
+
 		#
-		# We aren't processing a single map. Scan through all the maps, in
-		# each run fetch the map information and attempt to process the map.
-		#
+		# By default, keep processing. This will be prevented if we are only
+		# supposed to process once. Otherwise, we will sleep and continue.
+		#		
 		while (true)
 			mapID = params.has_key?('mapID') ? params['mapID'] : nil
 			
 			begin
 				#
 				# Contact the server and download the metadata for the specified map
-				# (or for all maps when mapID is nil--i.e., it was not specified as a
-				# parameter.
+				# (or for all maps if one was not specified as a parameter).
 				#
-				metadata = fetchMetadata(params['metadataServerURL'], mapID)
-			
+				mapList = getMapList(params['metadataServerURL'], mapID)
+
 				#
-				# Process the images.
+				# Process any images identified in the metadata fetched above.
 				#
 				processedIDs = []
-				metadata.each do |metadatum|
+				mapList.each do |metadatum|
 					if (processImage(params, metadatum))
 						processedIDs.push(metadatum['id'])
 					end
@@ -163,16 +164,19 @@ class TilesetConverter
 				# we should just keep running and attempt again during the next run.
 				# Otherwise the script will just exit.
 				#
-				puts 'Error: '+e.to_s
+#				puts 'Error: '+e.to_s
+				raise
 			end
 			
 			#
-			# If we were given a map ID, we are only supposed to process once.
+			# If we were given a sleep delay, wait for that delay and continue
+			# processing. If we weren't, stop processing (after what should be a
+			# single run).
 			#
-			if (params.has_key?('mapID'))
-				break
-			else
+			if (params.has_key?('sleepDelay'))
 				sleep(params['sleepDelay'])
+			else
+				break
 			end
 		end
 	end
@@ -180,13 +184,14 @@ class TilesetConverter
 	
 	
 	#
-	# Process the specified image.
+	# Process the specified image if applicable.
 	#
+	# @param params The application parameters (bleh).
+	# @param metadata The overview metadata for the maps to process.
 	# @return True if the image was processed, false otherwise.
 	#
 	def processImage(params, metadata)
 		url = params['metadataServerURL']
-		fileName = metadata['identifier']
 		
 		#
 		# This is used to determine if we should actually process this image or
@@ -200,7 +205,7 @@ class TilesetConverter
 		#
 		checkpointDate = nil
 		@checkpoints.each do |checkpoint|
-			if (checkpoint['id'] == metadata['id'])
+			if (checkpoint['id'].to_s == metadata['id'].to_s)
 				checkpointDate = DateTime.parse(checkpoint['updated_at'])
 				break
 			end
@@ -218,11 +223,17 @@ class TilesetConverter
 		# We don't want to process an image if there aren't enough control points,
 		# regardless of if the times check out...
 		#
+		if (metadata['no_control_points'].to_i < 3) then process = false end
 		controlPoints = fetchControlPoints(url, metadata['id'])
-		if (controlPoints.length < 3) then process = false end
-		
+
 		if (process)
-			puts 'Processing map '+metadata['id']+'...'
+			puts 'Processing map '+metadata['id'].to_s+'...'
+			
+			#
+			# Reset the metadata to include all the in-depth metadata for this map.
+			#
+			metadata = getMapMetadata(url, metadata['id'])
+			fileName = metadata['identifier']
 			
 			#
 			# The y values in the database is "wrong": the conversion commands
@@ -299,7 +310,7 @@ class TilesetConverter
 	# Retrieve from the server any existing control points for the specified map.
 	#
 	def fetchControlPoints(url, mapID)
-		url = URI(url.to_s+'maps/'+mapID+'/control_points.json')
+		url = URI(url.to_s+'maps/'+mapID.to_s+'/control_points.json')
 		response = Net::HTTP.get_response(url)
 		data = response.body
 		json = JSON.parse(data)
@@ -331,7 +342,7 @@ class TilesetConverter
 			
 			if (!found) then @checkpoints.push({ 'id'=>id, 'updated_at' => now}) end
 		end
-		puts 'Checkpoints: '+@checkpoints.to_s
+#		puts 'New checkpoints: '+@checkpoints.to_s
 
 		#
 		# Save the new checkpoints to the file.
@@ -345,27 +356,46 @@ class TilesetConverter
 	
 	
 	#
-	# Retrieve metadata from the server. If a map ID is specified, metadata for
-	# only that map will be retrieved and an Array with a single Hash element
-	# containing the JSON data is returned. If no map ID is specified, all maps
-	# will be retrieved and an Array of Hash objects (each of which represents a
-	# map) will be returned.
+	# Retrieve map overview metadata from the server. If no map ID is specified,
+	# metadata for all maps is returned. Otherwise, an Array with a single entry
+	# containing the metadata for the specified map is returned.
 	#
 	# @param url The metadata server's base URL.
 	# @param mapID The map's identifier number.
 	# @return An Array with one or more Hash objects.
 	#
-	def fetchMetadata(baseURL, mapID=nil)
-		if (mapID != nil)
-			url = URI(baseURL.to_s+'maps/'+mapID.to_s+'.json')
-		else
-			url = URI(baseURL.to_s+'maps.json')
-		end
-		
+	def getMapList(baseURL, mapID=nil)
+		url = URI(baseURL.to_s+'maps.json')
 		response = Net::HTTP.get_response(url)
 		data = response.body
 		json = JSON.parse(data)
-		return (mapID == nil) ? json : [ json ]
+		if (mapID == nil)
+			return json
+		else
+			json.each do |e|
+				if (e['id'] == mapID) then return [ e ] end
+			end
+		end
+	end
+	
+	
+	
+	#
+	# Retrieve the metadata for a single map. This metadata includes much more
+	# information than the "overview" metadata that e.g. the getMapList method
+	# provides, including necessary parameters such as height and the actual
+	# control points.
+	#
+	# @param baseURL The server URL from which to retrieve the metadata.
+	# @param mapID The map ID.
+	# @return A Hash object containing the map metadata.
+	#
+	def getMapMetadata(baseURL, mapID)
+		url = URI(baseURL.to_s+'maps/'+mapID.to_s+'.json')
+		response = Net::HTTP.get_response(url)
+		data = response.body
+		json = JSON.parse(data)
+		return json
 	end
 	
 	
@@ -387,7 +417,8 @@ class TilesetConverter
 			[ '-d', GetoptLong::REQUIRED_ARGUMENT ],
 			[ '-h', GetoptLong::NO_ARGUMENT ],
 			[ '-m', GetoptLong::REQUIRED_ARGUMENT ],
-			[ '-s', GetoptLong::REQUIRED_ARGUMENT ]
+			[ '-s', GetoptLong::REQUIRED_ARGUMENT ],
+			[ '-w', GetoptLong::REQUIRED_ARGUMENT ]
 		)
 		
 		opts.each do |opt, arg|
@@ -401,6 +432,8 @@ class TilesetConverter
 					params['mapID'] = arg
 				when '-s'
 					params['metadataServerURL'] = arg
+				when '-w'
+					params['sleepDelay'] = arg
 			end
 		end
 		
@@ -410,28 +443,23 @@ class TilesetConverter
 	
 	
 	#
-	# Make sure the provided arguments are correct.
+	# Make sure the specified parameters are correct.
+	#
+	# @param params The parameters to check.
+	# @return The validate parameters.
+	# @throws Exception if a parameter is not correct.
 	#
 	def validateParameters(params)
-		#
-		# Set the defaults.
-		#
-		if (!params.has_key?('sleepDelay')) then params['sleepDelay'] = 10; end
-		
-		#
-		# Some initial error checking.
-		#
 		if (!params.has_key?('imageDirectory')) then raise 'No image directory parameter found.' end
 		if (!params.has_key?('metadataServerURL')) then raise 'No metadata server parameter found.' end
-		
-		#
-		# Parameter type/existence checking.
-		#
 		if (!File.directory?(params['imageDirectory'])) then raise 'Image directory parameter "'+params['imageDirectory']+'" is not a directory.' end
 		if (!File.readable?(params['imageDirectory'])) then raise 'Image directory parameter "'+params['imageDirectory']+'" is not readable.' end
 		if (!File.writable?(params['imageDirectory'])) then raise 'Image directory parameter "'+params['imageDirectory']+'" is not writable.' end
 		if (params.has_key?('mapID'))
 			if (!params['mapID'].is_int?) then raise 'Map ID is not an integer.' else params['mapID'] = params['mapID'].to_i end
+		end
+		if (params.has_key?('sleepDelay'))
+			if (!params['sleepDelay'].is_int?) then raise 'Sleep delay is not an integer.' else params['sleepDelay'] = params['sleepDelay'].to_i end
 		end
 		params['metadataServerURL'] = URI.parse(params['metadataServerURL'])
 		
@@ -443,12 +471,20 @@ class TilesetConverter
 
 
 
+	#
+	# Prints usage information to the CLI with an optional error message. If an
+	# error message is provided, the returned exit code is changed from zero to
+	# one to indicate that there was an error.
+	#
+	# @param message An optional error message to be printed.
+	# @return The exit code that should be used (zero or one).
+	#
 	def usage(message = nil)
-		returnCode = 1
+		returnCode = 0
 		if (message != nil && message.length > 0)
 			puts 'Error: '+message
 			puts
-			returnCode = 0
+			returnCode = 1
 		end
 		
 		#
