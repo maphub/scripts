@@ -119,8 +119,8 @@ class TilesetConverter
 				# We are being used via the CLI, show the error and usage output.
 				#
 				returnCode = usage(e.message())
-#				exit returnCode
-raise
+				exit returnCode
+#				raise
 			else
 				#
 				# We are being used in another application, throw the current
@@ -164,8 +164,8 @@ raise
 				# we should just keep running and attempt again during the next run.
 				# Otherwise the script will just exit.
 				#
-#				puts 'Error: '+e.to_s
-				raise
+				puts 'Error: '+e.to_s
+#				raise
 			end
 			
 			#
@@ -450,7 +450,7 @@ raise
 	# @throws Exception if a parameter is not correct.
 	#
 	def validateParameters(params)
-		if (!params.has_key?('imageDirectory')) then raise 'No image directory parameter found.' end
+		if (!params.has_key?('imageDirectory')) then raise 'No image directory parameter found.' else params['imageDirectory'] = params['imageDirectory'].chomp('/') end
 		if (!params.has_key?('metadataServerURL')) then raise 'No metadata server parameter found.' end
 		if (!File.directory?(params['imageDirectory'])) then raise 'Image directory parameter "'+params['imageDirectory']+'" is not a directory.' end
 		if (!File.readable?(params['imageDirectory'])) then raise 'Image directory parameter "'+params['imageDirectory']+'" is not readable.' end
