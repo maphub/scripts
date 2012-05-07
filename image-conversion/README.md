@@ -3,6 +3,7 @@ This script converts a raw map image into a Google tileset if certain criteria a
 
 # Criteria
 The script will attempt to convert a raw map image into a tileset if both of the following criteria are satisfied:
+
 1. There exists no previous conversion timestamp or the current timestamp is older than the modification time of the map.
 2. There exist more than two control points for the map.
 
