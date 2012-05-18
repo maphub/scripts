@@ -39,6 +39,14 @@ The script will attempt to convert a raw map image into a tileset if both of the
 ### Usage
 Currently, the script can be run in one of two ways: it can be run from the command-line, using typical command-line switches, or it can be run from within another application using a hash of parameters. The current list of possible parameters are as follows:
 
+Run it once:
+
+    ./convert.rb -d ~/data/maps/ -s http://maphubdev.mminf.univie.ac.at:3000/
+    
+Run it every X seconds
+
+    ./convert.rb -d ~/data/maps/ -s http://maphubdev.mminf.univie.ac.at:3000/ -w 1000
+
 <table>
 	<tr>
 		<td>CLI</td>
