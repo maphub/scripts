@@ -8,6 +8,7 @@ require 'fileutils'
 require 'getoptlong'
 require 'json'
 require 'net/http'
+require 'rexml/document'
 require 'tmpdir'
 require 'uri'
 
@@ -143,6 +144,7 @@ class TilesetConverter
 				# (or for all maps if one was not specified as a parameter).
 				#
 				mapList = getMapList(params['metadataServerURL'], mapID)
+				puts 'Maps: '+mapList.to_s
 
 				#
 				# Process any images identified in the metadata fetched above.
@@ -165,7 +167,7 @@ class TilesetConverter
 				# Otherwise the script will just exit.
 				#
 				puts 'Error: '+e.to_s
-#				raise
+				raise
 			end
 			
 			#
@@ -287,18 +289,41 @@ class TilesetConverter
 			system(tileCommand)
 			
 			#
+			# Next we need to tell the server what the new map boundaries are. Get
+			# the XML data so we can parse out the boundaries.
+			#
+			xmlFile = File.new(dir.to_s+'/'+$tilesetName+'/tilemapresource.xml')
+			xmlDoc = REXML::Document.new(xmlFile)
+			bounds = xmlDoc.root.elements['BoundingBox'].attributes
+			
+			#
+			# Make a PUT request to update the map with the new boundaries.
+			#
+			uri = URI(params['metadataServerURL'].to_s+'maps/'+metadata['id'].to_s)
+			request = Net::HTTP::Put.new(uri.path)
+			request.set_form_data(
+				'ne_lat' => bounds['maxx'],
+				'ne_lng' => bounds['maxy'],
+				'sw_lat' => bounds['minx'],
+				'sw_lng' => bounds['miny']
+			)
+			http = Net::HTTP.new(uri.host, uri.port)
+			response = http.request(request)
+			
+			#
 			# Clean up the generated files to leave only the images and the XML
 			# file which contains the map bounds and other GIS information.
 			#
-			FileUtils.rm(Dir.glob(dir.to_s+'/'+$tilesetName+'/*.html'))
+			FileUtils.rm(Dir.glob(dir.to_s+'/'+$tilesetName+'/*.*ml'))
 			
 			#
 			# Remove the current tile set and move the new tile set into its
 			# place.
 			#
+			FileUtils.mkdir_p(params['imageDirectory']+'/'+$tilesetName)
 			FileUtils.rm_rf(params['imageDirectory']+'/'+$tilesetName+'/'+fileName)
 			FileUtils.mv(dir.to_s+'/'+$tilesetName, params['imageDirectory']+'/'+$tilesetName+'/'+fileName)
-			
+
 			return true
 		end
 		
@@ -392,6 +417,8 @@ class TilesetConverter
 	# @return A Hash object containing the map metadata.
 	#
 	def getMapMetadata(baseURL, mapID)
+		puts 'getMapMetadata'
+		puts baseURL.to_s+'maps/'+mapID.to_s+'.json'
 		url = URI(baseURL.to_s+'maps/'+mapID.to_s+'.json')
 		response = Net::HTTP.get_response(url)
 		data = response.body
