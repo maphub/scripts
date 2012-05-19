@@ -28,7 +28,17 @@ The script __seeddata/generate_loc_seeddata__ generates a YAML file which define
 
 ## Generating Google Map Overlays
 
-The script __geo/convert.rb__ converts a raw map image into a Google tileset if certain criteria are met. This script currently does not work on Windows, but might work within Cygwin. This script takes input parameters that specify which maps to update and where to get metadata for those maps. The script then attempts to process and create tile sets for those maps. If a tile set is created successfully, the script records the time at which the map was processed (a "checkpoint"). Currently, the checkpoints are stored in a JSON-formatted text file in /tmp. The script can run in a single-use scenario, where the conversion attempts are made and then the script exits, or in a background task scenario, where the script processes the images, waits a specified amount of time, and tries again, ad infinitum.
+The script __geo/convert.rb__ converts a raw map image into a Google tileset if certain criteria are met. This script takes input parameters that specify which maps to update and where to get metadata for those maps. The script then attempts to process and create tile sets for those maps. If a tile set is created successfully, the script records the time at which the map was processed (a "checkpoint"). Currently, the checkpoints are stored in a JSON-formatted text file in /tmp. The script can run in a single-use scenario, where the conversion attempts are made and then the script exits, or in a background task scenario, where the script processes the images, waits a specified amount of time, and tries again, ad infinitum.
+
+### Prerequisites
+
+GDAL (http://www.gdal.org/) must be installed on the server that is running __convert.rb__
+
+Installation on Ubuntu 11.x:
+
+    sudo apt-get install python-software-properties
+    sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
+    sudo apt-get install gdal-bin
 
 ### Criteria
 The script will attempt to convert a raw map image into a tileset if both of the following criteria are satisfied:
