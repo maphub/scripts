@@ -316,7 +316,7 @@ class TilesetConverter
 			# Clean up the generated files to leave only the images and the XML
 			# file which contains the map bounds and other GIS information.
 			#
-			FileUtils.rm(Dir.glob(dir.to_s+'/'+$tilesetName+'/*.*ml'))
+			FileUtils.rm(Dir.glob(dir.to_s+'/'+$tilesetName+'/*.html'))
 			
 			#
 			# Remove the current tile set and move the new tile set into its
