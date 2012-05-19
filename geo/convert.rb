@@ -287,7 +287,7 @@ class TilesetConverter
 			# directory.
 			#			
 			#tileCommand='gdal2tiles.py -n '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
-			tileCommand='gdal2tiles.py '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
+			tileCommand='gdal2tiles.py -k '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
 			system(tileCommand)
 			
 			#
