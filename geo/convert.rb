@@ -286,7 +286,8 @@ class TilesetConverter
 			# Generate the tile set, placing the generated images in the temporary
 			# directory.
 			#			
-			tileCommand='gdal2tiles.py -n '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
+			#tileCommand='gdal2tiles.py -n '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
+			tileCommand='gdal2tiles.py '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
 			system(tileCommand)
 			
 			#
@@ -315,7 +316,7 @@ class TilesetConverter
 			# Clean up the generated files to leave only the images and the XML
 			# file which contains the map bounds and other GIS information.
 			#
-			# FileUtils.rm(Dir.glob(dir.to_s+'/'+$tilesetName+'/*.*ml'))
+			FileUtils.rm(Dir.glob(dir.to_s+'/'+$tilesetName+'/*.*ml'))
 			
 			#
 			# Remove the current tile set and move the new tile set into its
