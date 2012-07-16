@@ -232,7 +232,7 @@ class TilesetConverter
       # directory.
       #tileCommand='gdal2tiles.py -n '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
       publishURL = params['publishServerURL'] + $tilesetName + "/" + fileName + ""
-      tileCommand='gdal2tiles.py -publishurl '+publishURL+' -k '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
+      tileCommand='gdal2tiles.py -u '+publishURL+' -k '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
       puts "Tiling: #{tileCommand}"
       system(tileCommand)
       
