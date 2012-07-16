@@ -231,8 +231,8 @@ class TilesetConverter
       # Generate the tile set, placing the generated images in the temporary
       # directory.
       #tileCommand='gdal2tiles.py -n '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
-      publishURL = params['publishServerURL'] + $tilesetName + "/" + fileName + ""
-      tileCommand='gdal2tiles.py -u '+publishURL+' -k '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
+      publishURL = params['publishServerURL'] + $tilesetName
+      tileCommand='gdal2tiles.py -u '+publishURL+' -k '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+fileName
       puts "Tiling: #{tileCommand}"
       system(tileCommand)
       
@@ -263,8 +263,10 @@ class TilesetConverter
       # place.
       FileUtils.mkdir_p(params['imageDirectory']+'/'+$tilesetName)
       FileUtils.rm_rf(params['imageDirectory']+'/'+$tilesetName+'/'+fileName)
-      FileUtils.mv(dir.to_s+'/'+$tilesetName, params['imageDirectory']+'/'+$tilesetName+'/'+fileName)
-
+      
+      # Move /tmp/.../IDENTIFIER to target/ts_google/IDENTIFIER
+      FileUtils.mv(dir.to_s+'/'+fileName, params['imageDirectory']+'/'+$tilesetName+'/'+fileName)
+      
       return true
     end
     
