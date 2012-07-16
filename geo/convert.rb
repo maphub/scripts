@@ -220,26 +220,28 @@ class TilesetConverter
         translateCommand = translateCommand+' -gcp '+cp['x'].to_s+' '+cp['y'].to_s+' '+cp['lng']+' '+cp['lat']
       end
       translateCommand = translateCommand+' '+params['imageDirectory']+'/raw/'+fileName+'.jp2 '+dir.to_s+'/'+fileName+'-original.vrt'
+      puts "Translating: #{translateCommand}"
       system(translateCommand)
-
-      #
+      
       # Warp the image.
-      #      
       warpCommand='gdalwarp -of VRT -s_srs EPSG:4326 -t_srs EPSG:4326 '+dir.to_s+'/'+fileName+'-original.vrt '+dir.to_s+'/'+fileName+'-warped.vrt'
+      puts "Warping: #{warpCommand}"
       system(warpCommand)
 
       # Generate the tile set, placing the generated images in the temporary
       # directory.
       #tileCommand='gdal2tiles.py -n '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
-      tileCommand='gdal2tiles.py -k '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
+      publishURL = params['publishServerURL'] + $tilesetName + "/" + fileName + ""
+      tileCommand='gdal2tiles.py -publishurl '+publishURL+' -k '+dir.to_s+'/'+fileName+'-warped.vrt '+dir.to_s+'/'+$tilesetName
+      puts "Tiling: #{tileCommand}"
       system(tileCommand)
       
       # Next we need to tell the server what the new map boundaries are. Get
       # the XML data so we can parse out the boundaries.
-      xmlFile = File.new(dir.to_s+'/'+$tilesetName+'/tilemapresource.xml')
-      xmlDoc = REXML::Document.new(xmlFile)
-      bounds = xmlDoc.root.elements['BoundingBox'].attributes
-      
+      # xmlFile = File.new(dir.to_s+'/'+$tilesetName+'/tilemapresource.xml')
+      # xmlDoc = REXML::Document.new(xmlFile)
+      # bounds = xmlDoc.root.elements['BoundingBox'].attributes
+      #       
       # Make a PUT request to update the map with the new boundaries.
       # This is disabled for the time being.
       # uri = URI(params['metadataServerURL'].to_s+'maps/'+metadata['id'].to_s)
@@ -366,7 +368,8 @@ class TilesetConverter
       [ '-h', GetoptLong::NO_ARGUMENT ],
       [ '-m', GetoptLong::REQUIRED_ARGUMENT ],
       [ '-s', GetoptLong::REQUIRED_ARGUMENT ],
-      [ '-w', GetoptLong::REQUIRED_ARGUMENT ]
+      [ '-w', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '-p', GetoptLong::REQUIRED_ARGUMENT ]
     )
     
     opts.each do |opt, arg|
@@ -382,6 +385,8 @@ class TilesetConverter
           params['metadataServerURL'] = arg
         when '-w'
           params['sleepDelay'] = arg
+        when '-p'
+          params['publishServerURL'] = arg
       end
     end
     
@@ -398,6 +403,7 @@ class TilesetConverter
   def validateParameters(params)
     if (!params.has_key?('imageDirectory')) then raise 'No image directory parameter found.' else params['imageDirectory'] = params['imageDirectory'].chomp('/') end
     if (!params.has_key?('metadataServerURL')) then raise 'No metadata server parameter found.' end
+    if (!params.has_key?('publishServerURL')) then raise 'No publish server parameter found.' end
     if (!File.directory?(params['imageDirectory'])) then raise 'Image directory parameter "'+params['imageDirectory']+'" is not a directory.' end
     if (!File.readable?(params['imageDirectory'])) then raise 'Image directory parameter "'+params['imageDirectory']+'" is not readable.' end
     if (!File.writable?(params['imageDirectory'])) then raise 'Image directory parameter "'+params['imageDirectory']+'" is not writable.' end
@@ -429,20 +435,19 @@ class TilesetConverter
       returnCode = 1
     end
     
-    # Excellent heredoc gsub tip found at:
-    # http://rubyquicktips.com/post/4438542511/heredoc-and-indent
-    puts <<-END.gsub(/\s{8}/, '')
-      Usage:
-        #{$0} -d dir -s url [ -w delay ] [ -m id ]
-        
-      Options:
-        -?: Display this usage information.
-        -h: Display this usage information.
-        -d: A directory containing raw images and tile sets.
-        -m: An optional map ID to process (instead of all maps).
-        -s: A server URL from which map metadata can be queried.
-        -w: An optional delay (in seconds) to wait in between runs.
-    END
+    puts <<-END
+Usage:
+#{$0} -d dir -s url [ -w delay ] [ -m id ]
+
+Options:
+-?: Display this usage information.
+-h: Display this usage information.
+-d: A directory containing raw images and tile sets.
+-m: An optional map ID to process (instead of all maps).
+-s: A server URL from which map metadata can be queried.
+-w: An optional delay (in seconds) to wait in between runs.
+-p: A server URL where maps are going to be available.
+END
     returnCode
   end
 end
