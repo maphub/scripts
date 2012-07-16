@@ -44,18 +44,18 @@ Installation on Ubuntu 11.x:
 The script will attempt to convert a raw map image into a tileset if both of the following criteria are satisfied:
 
 1. There exists no previous conversion timestamp or the current timestamp is older than the modification time of the map.
-2. There exist more than two control points for the map.
+2. There exist at least three control points for the map.
 
 ### Usage
 Currently, the script can be run in one of two ways: it can be run from the command-line, using typical command-line switches, or it can be run from within another application using a hash of parameters. The current list of possible parameters are as follows:
 
 Run it once:
 
-    ./convert.rb -d ~/data/maps/ -s http://maphubdev.mminf.univie.ac.at:3000/
+    ./convert.rb -d ~/data/maps/ -s http://maphubdev.mminf.univie.ac.at:3000/ -p http://samos.mminf.univie.ac.at/maps/
     
 Run it every X seconds
 
-    ./convert.rb -d ~/data/maps/ -s http://maphubdev.mminf.univie.ac.at:3000/ -w 1000
+    ./convert.rb -d ~/data/maps/ -s http://maphubdev.mminf.univie.ac.at:3000/ -p http://samos.mminf.univie.ac.at/maps/ -w 1000
 
 <table>
 	<tr>
@@ -92,5 +92,10 @@ Run it every X seconds
 		<td>-w</td>
 		<td>sleepDelay</td>
 		<td>(Optional) A delay, in seconds, to wait before attempting to re-process the specified maps. If not specified, only one run will be processed and then the script will exit.</td>
+	</tr>
+	<tr>
+		<td>-p</td>
+		<td>publishServerURL</td>
+		<td>The root URL for the MapHub server that contains the final tilesets (i.e. where they are published).</td>
 	</tr>
 </table>
