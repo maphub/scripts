@@ -459,5 +459,12 @@ end
 # If this script is called via CLI, run the converter. Otherwise, assume that
 # is it being included in another application, and don't do anything.
 #
-if (__FILE__ == $0) then TilesetConverter.new().main end
+if (__FILE__ == $0) 
+  if File.new("/tmp/maphub-convert-lock", "w").flock( File::LOCK_NB | File::LOCK_EX )
+    TilesetConverter.new().main
+  else
+    puts "Exiting, another instance of this script is blocking."
+    exit
+  end
+end
 
