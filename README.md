@@ -2,7 +2,7 @@
 
 This repository contains a collection of scripts for preparing data and running the maphub portal.
 
-## Seeddata generation
+## Generating Seed-Data (Maps, Metadata)
 
 It is assumed that the maphub portal is set up from some seeddata (metadata, maps).
 
@@ -47,15 +47,16 @@ The script will attempt to convert a raw map image into a tileset if both of the
 2. There exist at least three control points for the map.
 
 ### Usage
+
 Currently, the script can be run in one of two ways: it can be run from the command-line, using typical command-line switches, or it can be run from within another application using a hash of parameters. The current list of possible parameters are as follows:
 
 Run it once:
 
-    ./convert.rb -d ~/data/maps/ -s http://maphubdev.mminf.univie.ac.at:3000/ -p http://samos.mminf.univie.ac.at/maps/
+    ./convert.rb -d ~/data/maps/ -s http://maphubdev.mminf.univie.ac.at/ -p http://samos.mminf.univie.ac.at/maps/
     
-Run it every X seconds
+Run it every X (e.g., 1000) seconds
 
-    ./convert.rb -d ~/data/maps/ -s http://maphubdev.mminf.univie.ac.at:3000/ -p http://samos.mminf.univie.ac.at/maps/ -w 1000
+    ./convert.rb -d ~/data/maps/ -s http://maphubdev.mminf.univie.ac.at/ -p http://samos.mminf.univie.ac.at/maps/ -w 1000
 
 <table>
 	<tr>
